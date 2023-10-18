@@ -24,7 +24,6 @@ const client = new MongoClient(uri, {
   },
 });
 
-
 const database = client.db("assignmentDB");
 const productsCollection = database.collection("productDetails");
 
@@ -34,23 +33,30 @@ async function run() {
     // await client.connect();
     // Send a ping to confirm a successful connection
 
-    // post type 
-    app.post("/products" ,async (req ,res)=>{
-        const products = req.body;
-        const result = await productsCollection.insertOne(products);
-        res.send(result)
-    })
+    // post type
+    app.post("/products", async (req, res) => {
+      const products = req.body;
+      const result = await productsCollection.insertOne(products);
+      res.send(result);
+    });
 
-    // Read type 
-    app.get("/products" , async(req ,res)=>{
-        const cursor = productsCollection.find();
-        const result = await cursor.toArray()
-        res.send(result)
-    })
+    // Read type
+    app.get("/products", async (req, res) => {
+      const cursor = productsCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
+    // find data category name
 
+    app.get("/products/:categoryName", async (req, res) => {
+      const categoryName = req.params.categoryName;
 
-
+      const data = { brandName: categoryName };
+      const cursor = productsCollection.find(data);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
