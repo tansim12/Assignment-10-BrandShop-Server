@@ -26,6 +26,7 @@ const client = new MongoClient(uri, {
 
 const database = client.db("assignmentDB");
 const productsCollection = database.collection("productDetails");
+const addToCartCollection = database.collection("addToCart");
 
 async function run() {
   try {
@@ -39,6 +40,27 @@ async function run() {
       const result = await productsCollection.insertOne(products);
       res.send(result);
     });
+
+    // addToCartCollection post method
+    app.post("/cartProducts", async (req, res) => {
+      const products = req.body;
+      const result = await addToCartCollection.insertOne(products);
+      res.send(result);
+    });
+
+    // addToCartCollection Read type
+    app.get("/cartProducts", async (req, res) => {
+      const cursor = addToCartCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.delete("/cartProducts/_id", async (req, res) => {
+      const id = req.params._id;
+      console.log("hitting" , id);
+      // const result = await cursor.toArray();
+      // res.send(result);
+    });
+
 
     // Read type
     app.get("/products", async (req, res) => {
@@ -65,15 +87,14 @@ async function run() {
       res.send(result);
     });
 
+    // update product
     app.put("/products/:categoryName/:_id", async (req, res) => {
       const product = req.body;
       const id = req.params._id;
       const filter = { _id: new ObjectId(id) };
       const { productName, price, description, img, type, rating, brandName } =
         product;
-
       const options = { upsert: true };
-
       const updateDoc = {
         $set: {
           productName: productName,
@@ -85,8 +106,11 @@ async function run() {
           brandName: brandName,
         },
       };
-
-      const result = await productsCollection.updateOne(filter, updateDoc, options);
+      const result = await productsCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
       res.send(result);
     });
 
