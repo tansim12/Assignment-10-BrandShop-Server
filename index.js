@@ -57,11 +57,36 @@ async function run() {
       res.send(result);
     });
 
-    // find data  _id
-    app.get("/product/:_id", async (req, res) => {
+    // find data  _id by product not be  products
+    app.get("/products/:categoryName/:_id", async (req, res) => {
       const id = req.params._id;
       const query = { _id: new ObjectId(id) };
       const result = await productsCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.put("/products/:categoryName/:_id", async (req, res) => {
+      const product = req.body;
+      const id = req.params._id;
+      const filter = { _id: new ObjectId(id) };
+      const { productName, price, description, img, type, rating, brandName } =
+        product;
+
+      const options = { upsert: true };
+
+      const updateDoc = {
+        $set: {
+          productName: productName,
+          price: price,
+          description: description,
+          img: img,
+          type: type,
+          rating: rating,
+          brandName: brandName,
+        },
+      };
+
+      const result = await productsCollection.updateOne(filter, updateDoc, options);
       res.send(result);
     });
 
