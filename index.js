@@ -44,6 +44,7 @@ async function run() {
     // addToCartCollection post method
     app.post("/cartProducts", async (req, res) => {
       const products = req.body;
+      delete products._id;
       const result = await addToCartCollection.insertOne(products);
       res.send(result);
     });
@@ -54,13 +55,13 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
-    app.delete("/cartProducts/_id", async (req, res) => {
+    // addToCartCollection delete type
+    app.delete("/cartProducts/:_id", async (req, res) => {
       const id = req.params._id;
-      console.log("hitting" , id);
-      // const result = await cursor.toArray();
-      // res.send(result);
+      const query = { _id: new ObjectId(id) };
+      const result = await addToCartCollection.deleteOne(query);
+      res.send(result);
     });
-
 
     // Read type
     app.get("/products", async (req, res) => {
