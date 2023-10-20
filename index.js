@@ -51,7 +51,9 @@ async function run() {
 
     // addToCartCollection Read type
     app.get("/cartProducts", async (req, res) => {
-      const cursor = addToCartCollection.find();
+      const product = req.body
+      const query = {email : product.email}
+      const cursor = addToCartCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
