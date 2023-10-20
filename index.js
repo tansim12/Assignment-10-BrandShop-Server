@@ -49,14 +49,21 @@ async function run() {
       res.send(result);
     });
 
-    // addToCartCollection Read type
+    // addToCartCollection Read type all data
     app.get("/cartProducts", async (req, res) => {
-      const product = req.body
-      const query = {email : product.email}
+      const cursor = addToCartCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    // addToCartCollection Read type   find by email
+    app.get("/cartProducts/:email", async (req, res) => {
+      const productEmail = req.params.email;
+      const query = { email: productEmail };
       const cursor = addToCartCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
+
     // addToCartCollection delete type
     app.delete("/cartProducts/:_id", async (req, res) => {
       const id = req.params._id;
