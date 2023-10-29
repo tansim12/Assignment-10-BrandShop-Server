@@ -1,20 +1,47 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
 // middle ware
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://aquamarine-gecko-c70636.netlify.app",
+      "http://localhost:5173",
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
+
+// custom middle ware by verifyToken
+const verifyToken = async (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).send({ message: "no token found" });
+  }
+  jwt.verify(token, process.env.SEC, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "forbidden access" });
+    } else {
+      req.decoded = decoded;
+      // console.log(decoded);
+      next();
+    }
+  });
+};
 
 app.get("/", (req, res) => {
   res.send("Assignment is running 10");
 });
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qmivnkm.mongodb.net/?retryWrites=true&w=majority`;
-
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -30,15 +57,29 @@ const addToCartCollection = database.collection("addToCart");
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
-    // Send a ping to confirm a successful connection
+    // jwt section
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign({ data: user }, process.env.SEC, {
+        expiresIn: "1h",
+      });
+      // res
+      //   .cookie("token", token, {
+      //     httpOnly: true,
+      //     secure: process.env.SEC === "production",
+      //     sameSite: process.env.SEC === "production" ? "none" : "strict",
+      //   })
+      //   .send({ success: true });
 
-    // post type
-    app.post("/products", async (req, res) => {
-      const products = req.body;
-      const result = await productsCollection.insertOne(products);
-      res.send(result);
+
+      // 2
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
     });
 
     // addToCartCollection post method
@@ -49,16 +90,16 @@ async function run() {
       res.send(result);
     });
 
-    // addToCartCollection Read type all data
-    app.get("/cartProducts", async (req, res) => {
-      const cursor = addToCartCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-    // addToCartCollection Read type   find by email
-    app.get("/cartProducts/:email", async (req, res) => {
-      const productEmail = req.params.email;
-      const query = { email: productEmail };
+    // addToCartCollection Read type   find by email   *** new update
+    app.get("/cartProducts", verifyToken, async (req, res) => {
+      const decodedEmail = req.decoded.data.email;
+      if (req.query?.email !== decodedEmail) {
+        return res.status(401).send({ message: "forbidden" });
+      }
+      let query = {}; // new added here by finding query
+      if (req.query?.email) {
+        query = { email: req.query?.email };
+      }
       const cursor = addToCartCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
@@ -72,25 +113,38 @@ async function run() {
       res.send(result);
     });
 
+    // post type
+    app.post("/products", async (req, res) => {
+      const products = req.body;
+      const result = await productsCollection.insertOne(products);
+      res.send(result);
+    });
+
     // Read type
-    app.get("/products", async (req, res) => {
+    app.get("/products", verifyToken, async (req, res) => {
+      const decodedEmail = req.decoded.data.email;
+      if (req.query?.email !== decodedEmail) {
+        return res.status(401).send({ message: "forbidden" });
+      }
       const cursor = productsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
 
     // find data category name
-
-    app.get("/products/:categoryName", async (req, res) => {
+    app.get("/products/:categoryName", verifyToken, async (req, res) => {
       const categoryName = req.params.categoryName;
       const data = { brandName: categoryName };
-      const cursor = productsCollection.find(data);
+      const option = {
+        projection: { description: 0 },
+      };
+      const cursor = productsCollection.find(data, option);
       const result = await cursor.toArray();
       res.send(result);
     });
 
     // find data  _id by product not be  products
-    app.get("/products/:categoryName/:_id", async (req, res) => {
+    app.get("/products/:categoryName/:_id", verifyToken, async (req, res) => {
       const id = req.params._id;
       const query = { _id: new ObjectId(id) };
       const result = await productsCollection.findOne(query);
