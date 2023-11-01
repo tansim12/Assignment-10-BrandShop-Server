@@ -36,6 +36,7 @@ const verifyToken = async (req, res, next) => {
     }
   });
 };
+console.log(process.env.NODE_ENV);
 
 app.get("/", (req, res) => {
   res.send("Assignment is running 10");
@@ -63,15 +64,6 @@ async function run() {
       const token = jwt.sign({ data: user }, process.env.SEC, {
         expiresIn: "1h",
       });
-      // res
-      //   .cookie("token", token, {
-      //     httpOnly: true,
-      //     secure: process.env.SEC === "production",
-      //     sameSite: process.env.SEC === "production" ? "none" : "strict",
-      //   })
-      //   .send({ success: true });
-
-
       // 2
       res
         .cookie("token", token, {
