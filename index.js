@@ -13,6 +13,7 @@ app.use(
     origin: [
       "https://aquamarine-gecko-c70636.netlify.app",
       "http://localhost:5173",
+      "http://localhost:5174",
     ],
     credentials: true,
   })
@@ -68,8 +69,10 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          secure: true,
+          // secure: process.env.NODE_ENV === "production",
+          // sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          sameSite: "none",
         })
         .send({ success: true });
     });
